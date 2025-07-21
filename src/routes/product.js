@@ -12,11 +12,11 @@ const {
     unverifyProduct,
 } = require('../controllers/productController');
 
-router.post('/', auth, createProduct);
+router.post('/', auth, role(['Farmer']), createProduct);
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.put('/:id', auth, updateProduct);
-router.delete('/:id', auth, deleteProduct);
+router.put('/:id', auth, role(['Farmer']), updateProduct);
+router.delete('/:id', auth, role(['Farmer']), deleteProduct);
 router.patch('/:id/verify', auth, role(['Admin']), verifyProduct);
 router.patch('/:id/unverify', auth, role(['Admin']), unverifyProduct);
 

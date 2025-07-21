@@ -3,6 +3,9 @@ const Product = require('../models/Product');
 exports.createProduct = async (req, res) => {
     try {
         const { title, price, description, category, images, location } = req.body;
+        if (!title || !price || !description || !category || !location) {
+            return res.status(400).json({ message: 'All fields except images are required.' });
+        }
         const product = new Product({
             user: req.user.id,
             title,
@@ -15,7 +18,8 @@ exports.createProduct = async (req, res) => {
         await product.save();
         res.status(201).json(product);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Create Product error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -28,7 +32,8 @@ exports.getProducts = async (req, res) => {
         const products = await Product.find(query).populate('user', 'name role location');
         res.json(products);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Get Products error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -38,7 +43,8 @@ exports.getProductById = async (req, res) => {
         if (!product) return res.status(404).json({ message: 'Product not found' });
         res.json(product);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Get Product By ID error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -54,7 +60,8 @@ exports.updateProduct = async (req, res) => {
         await product.save();
         res.json(product);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Update Product error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -68,7 +75,8 @@ exports.deleteProduct = async (req, res) => {
         await product.deleteOne();
         res.json({ message: 'Product deleted' });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Delete Product error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -80,7 +88,8 @@ exports.verifyProduct = async (req, res) => {
         await product.save();
         res.json({ message: 'Product verified', product });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Verify Product error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -92,6 +101,7 @@ exports.unverifyProduct = async (req, res) => {
         await product.save();
         res.json({ message: 'Product unverified', product });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Unverify Product error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 }; 
