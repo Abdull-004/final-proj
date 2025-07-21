@@ -23,21 +23,24 @@ app.use(express.json());
 // CORS middleware - updated to allow your frontend & Render
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://final-proj-frontend.vercel.app',
+    'http://localhost:3000',
+    'https://final-proj-frontend-lrzm.vercel.app',
     'https://final-proj-2-ypf3.onrender.com'
 ];
 
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Allow requests with no origin (like Postman or internal Render checks)
-            if (!origin || allowedOrigins.includes(origin)) {
+            if (!origin) return callback(null, true); // Allow Postman / health checks
+
+            if (allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
-                callback(new Error('Not allowed by CORS'));
+                console.warn(`🛑 Blocked by CORS: ${origin}`);
+                callback(null, false); // Don't crash, just deny
             }
         },
-        credentials: true
+        credentials: true,
     })
 );
 
