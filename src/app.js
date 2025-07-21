@@ -20,25 +20,26 @@ const app = express();
 // Body parser middleware
 app.use(express.json());
 
-// CORS middleware - dynamically allow specific origins
+// CORS middleware - updated to allow your frontend & Render
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://final-proj-frontend.vercel.app',
+    'https://final-proj-2-ypf3.onrender.com'
+];
+
 app.use(
     cors({
         origin: function (origin, callback) {
-            const allowedOrigins = [
-                'http://localhost:5173',
-                'https://final-proj-frontend.vercel.app'
-            ];
-            if (!origin) return callback(null, true); // allow curl/postman
-            if (allowedOrigins.includes(origin)) {
+            // Allow requests with no origin (like Postman or internal Render checks)
+            if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS'));
             }
         },
-        credentials: true,
+        credentials: true
     })
 );
-
 
 // Serve static files from uploads folder
 app.use('/uploads', express.static('uploads'));
