@@ -6,11 +6,18 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: {
         type: String,
-        enum: ['Farmer', 'Buyer', 'Vet', 'Service Provider', 'Admin'],
+        enum: ['customer', 'seller', 'admin'],
+        default: 'customer',
         required: true,
     },
+    // Seller-specific fields
+    shopName: { type: String },
+    shopDescription: { type: String },
+    // Common fields
     location: { type: String },
-    qualifications: [{ type: String }],
+    bio: { type: String, default: '' },
+    profileImage: { type: String, default: '' },
+    isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema); 

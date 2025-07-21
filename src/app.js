@@ -9,11 +9,11 @@ const connectDB = require('./config/db');
 dotenv.config();
 connectDB();
 
-const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/product');
-const messageRoutes = require('./routes/message');
-const paymentRoutes = require('./routes/payment');
 const userRoutes = require('./routes/user');
+const ordersRoutes = require('./routes/orders');
+const authRoutes = require('./routes/auth');
+const paymentRoutes = require('./routes/payment');
 
 const app = express();
 
@@ -47,11 +47,12 @@ app.use((req, res, next) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', require('./routes/admin'));
 
 // Base endpoint
 app.get('/', (req, res) => {

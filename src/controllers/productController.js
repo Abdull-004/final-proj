@@ -1,107 +1,75 @@
 const Product = require('../models/Product');
+const User = require('../models/User');
 
+// Admin: Create product
 exports.createProduct = async (req, res) => {
     try {
-        const { title, price, description, category, images, location } = req.body;
-        if (!title || !price || !description || !category || !location) {
-            return res.status(400).json({ message: 'All fields except images are required.' });
+        const user = await User.findById(req.user.id);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ message: 'Only admin can add products.' });
         }
-        const product = new Product({
-            user: req.user.id,
-            title,
-            price,
-            description,
-            category,
-            images,
-            location,
-        });
+        const { name, image, price, description, category, stock } = req.body;
+        if (!name || !image || !price || !description || !category) {
+            return res.status(400).json({ message: 'All fields are required.' });
+        }
+        const product = new Product({ name, image, price, description, category, stock });
         await product.save();
         res.status(201).json(product);
     } catch (err) {
-        console.error('Create Product error:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
+// Public: Get all products
 exports.getProducts = async (req, res) => {
     try {
-        const { category, search } = req.query;
-        let query = {};
-        if (category) query.category = category;
-        if (search) query.title = { $regex: search, $options: 'i' };
-        const products = await Product.find(query).populate('user', 'name role location');
+        const products = await Product.find().sort({ createdAt: -1 });
         res.json(products);
     } catch (err) {
-        console.error('Get Products error:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
+// Public: Get product by ID
 exports.getProductById = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id).populate('user', 'name role location');
-        if (!product) return res.status(404).json({ message: 'Product not found' });
-        res.json(product);
-    } catch (err) {
-        console.error('Get Product By ID error:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
-    }
-};
-
-exports.updateProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (!product) return res.status(404).json({ message: 'Product not found' });
-        if (product.user.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Not authorized' });
+        res.json(product);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+// Admin: Update product
+exports.updateProduct = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ message: 'Only admin can update products.' });
         }
-        const updates = req.body;
-        Object.assign(product, updates);
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        Object.assign(product, req.body);
         await product.save();
         res.json(product);
     } catch (err) {
-        console.error('Update Product error:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
+// Admin: Delete product
 exports.deleteProduct = async (req, res) => {
     try {
+        const user = await User.findById(req.user.id);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ message: 'Only admin can delete products.' });
+        }
         const product = await Product.findById(req.params.id);
         if (!product) return res.status(404).json({ message: 'Product not found' });
-        if (product.user.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Not authorized' });
-        }
         await product.deleteOne();
         res.json({ message: 'Product deleted' });
     } catch (err) {
-        console.error('Delete Product error:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
-    }
-};
-
-exports.verifyProduct = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
-        product.isVerified = true;
-        await product.save();
-        res.json({ message: 'Product verified', product });
-    } catch (err) {
-        console.error('Verify Product error:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
-    }
-};
-
-exports.unverifyProduct = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
-        product.isVerified = false;
-        await product.save();
-        res.json({ message: 'Product unverified', product });
-    } catch (err) {
-        console.error('Unverify Product error:', err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 }; 
