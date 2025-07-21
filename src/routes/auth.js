@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const authController = require('../controllers/authController');
+const { register, login } = require('../controllers/authController');
 
 // Registration Route
-router.post('/register',
+router.post(
+    '/register',
     [
         body('name').notEmpty().withMessage('Name is required'),
         body('email').isEmail().withMessage('Invalid email format'),
@@ -18,11 +19,12 @@ router.post('/register',
         }
         next();
     },
-    authController.register
+    register
 );
 
 // Login Route
-router.post('/login',
+router.post(
+    '/login',
     [
         body('email').isEmail().withMessage('Invalid email format'),
         body('password').notEmpty().withMessage('Password is required')
@@ -34,7 +36,7 @@ router.post('/login',
         }
         next();
     },
-    authController.login
+    login
 );
 
 module.exports = router;

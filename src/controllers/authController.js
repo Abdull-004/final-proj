@@ -3,112 +3,93 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 exports.register = async (req, res) => {
+    // Add these logs to see what's happening
+    console.log("--- Register endpoint hit ---");
+    console.log("Request body:", req.body);
+
     try {
-        // 1. Validate Request Body Exists
-        if (!req.body || Object.keys(req.body).length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Request body is empty'
-            });
+        if (!req.body) {
+            console.log("Error: Request body is missing.");
+            return res.status(400).json({ message: "Request body is missing." });
         }
 
-        // 2. Destructure with Default Values
-        const {
-            name = null,
-            email = null,
-            password = null,
-            role = null,
-            location = null
-        } = req.body;
+        const { name, email, password, role, location } = req.body;
 
-        // 3. Validate Required Fields
-        const missingFields = [];
-        if (!name) missingFields.push('name');
-        if (!email) missingFields.push('email');
-        if (!password) missingFields.push('password');
-        if (!role) missingFields.push('role');
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `Missing required fields: ${missingFields.join(', ')}`,
-                missingFields
-            });
+        if (!name || !email || !password || !role || !location) {
+            console.log("Error: A required field is missing.");
+            return res.status(400).json({ message: "All fields are required." });
         }
 
-        // 4. Validate Email Format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid email format'
-            });
+        let user = await User.findOne({ email });
+        if (user) {
+            console.log(`Error: User already exists with email: ${email}`);
+            return res.status(400).json({ message: "User already exists." });
         }
 
-        // 5. Validate Password Strength
-        if (password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password must be at least 6 characters'
-            });
-        }
-
-        // 6. Check for Existing User
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: 'Email already exists'
-            });
-        }
-
-        // 7. Hash Password
+        console.log("Hashing password...");
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+        console.log("Password hashed.");
 
-        // 8. Create User
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            role,
-            location
+        console.log("Creating new user...");
+        user = new User({ name, email, password: hashedPassword, role, location });
+        await user.save();
+        console.log("User saved to database.");
+
+        const payload = { id: user._id, role: user.role };
+
+        console.log("Signing JWT...");
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+        console.log("JWT signed.");
+
+        res.status(201).json({
+            token,
+            user: { id: user._id, name, email, role, location }
         });
 
-        // 9. Generate JWT Token
-        const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+    } catch (err) {
+        // This is the most important part for debugging
+        console.error("--- CATCH BLOCK ERROR in Register ---");
+        console.error("Full error object:", err);
+        console.error("-------------------------------------");
 
-        // 10. Prepare Response
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Email and password are required' });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+            expiresIn: '7d'
+        });
+
         const userResponse = user.toObject();
         delete userResponse.password;
 
-        return res.status(201).json({
+        return res.status(200).json({
             success: true,
-            message: 'Registration successful',
+            message: 'Login successful',
             token,
             user: userResponse
         });
-
     } catch (error) {
-        console.error('Registration Error:', error);
-
-        // Handle specific errors
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
-                success: false,
-                message: 'Validation error',
-                error: error.message
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        console.error('Login Error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
