@@ -9,4 +9,4 @@ const ProductSchema = new mongoose.Schema({
     stock: { type: Number, default: 0 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Product', ProductSchema); 
+module.exports = mongoose.model('Product', ProductSchema);

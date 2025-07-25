@@ -1,15 +1,15 @@
+// routes/orders.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { createOrder, getOrders, getMyOrders } = require('../controllers/orderController');
+const {
+    createOrder,
+    getOrders,
+    getMyOrders
+} = require('../controllers/orderController');
 
-// Client: Place order
-router.post('/', createOrder);
+router.post('/', createOrder);            // Public: Place order
+router.get('/my', auth, getMyOrders);     // Authenticated: My orders
+router.get('/', auth, getOrders);         // Admin: All orders
 
-// Client: Get my orders
-router.get('/my', auth, getMyOrders);
-
-// Admin: Get all orders
-router.get('/', auth, getOrders);
-
-module.exports = router; 
+module.exports = router;

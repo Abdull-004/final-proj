@@ -1,26 +1,19 @@
-// app.js
+// src/app.js
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-dotenv.config();
+// Connect to MongoDB
 connectDB();
-
-const productRoutes = require('./routes/product');
-const userRoutes = require('./routes/user');
-const ordersRoutes = require('./routes/orders');
-const authRoutes = require('./routes/auth');
-const paymentRoutes = require('./routes/payment');
 
 const app = express();
 
-// Body parser middleware
+// Middleware
 app.use(express.json());
 
-// CORS middleware - updated to allow your frontend & Render
+// ✅ CORS configuration
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -28,50 +21,43 @@ const allowedOrigins = [
     'https://final-proj-2-ypf3.onrender.com'
 ];
 
-app.use(
-    cors({
-        origin: function (origin, callback) {
-            if (!origin) return callback(null, true); // Allow Postman / health checks
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // allow Postman, curl, etc.
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        console.warn(`🛑 CORS Blocked: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
 
-            if (allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                console.warn(`🛑 Blocked by CORS: ${origin}`);
-                callback(null, false); // Don't crash, just deny
-            }
-        },
-        credentials: true,
-    })
-);
-
-// Serve static files from uploads folder
+// Static file serving (e.g. uploaded images)
 app.use('/uploads', express.static('uploads'));
 
-// Debugging middleware - log all incoming requests
+// Log all requests for debugging
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
+    console.log(`[${req.method}] ${req.path}`);
     next();
 });
 
-// API Routes
-app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/orders', ordersRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/payments', paymentRoutes);
+// Routes
+app.use('/api/products', require('./routes/product'));
+
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/payments', require('./routes/payment'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Base endpoint
+// Health check
 app.get('/', (req, res) => {
-    res.send('Garissa Market Hub API');
+    res.send('✅ Garissa Market Hub API is running');
 });
 
-// General error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: err.message || 'Server error' });
+    console.error('❌ Error:', err.stack);
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
 });
-
-const PORT = process.env.PORT || 5000;
 
 module.exports = app;
+

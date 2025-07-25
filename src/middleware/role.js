@@ -1,3 +1,4 @@
+// middleware/role.js
 const role = (roles) => (req, res, next) => {
     if (!roles.includes(req.user.role)) {
         return res.status(403).json({ message: 'Access denied: insufficient role' });
@@ -5,4 +6,4 @@ const role = (roles) => (req, res, next) => {
     next();
 };
 
-module.exports = role; 
+module.exports = role;

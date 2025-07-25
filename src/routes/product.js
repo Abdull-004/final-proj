@@ -1,15 +1,23 @@
+// FIXED routes/product.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { createProduct, getProducts, getProductById, updateProduct, deleteProduct } = require('../controllers/productController');
+const role = require('../middleware/role');
+const {
+    createProduct,
+    getProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct
+} = require('../controllers/productController');
 
-// Public routes
+// Public
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 
-// Admin-only routes
-router.post('/', auth, createProduct);
-router.put('/:id', auth, updateProduct);
-router.delete('/:id', auth, deleteProduct);
+// Admin-only
+router.post('/', auth, role(['admin']), createProduct);
+router.put('/:id', auth, role(['admin']), updateProduct);
+router.delete('/:id', auth, role(['admin']), deleteProduct);
 
-module.exports = router; 
+module.exports = router;
